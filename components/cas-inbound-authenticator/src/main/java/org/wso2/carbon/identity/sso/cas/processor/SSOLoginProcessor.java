@@ -36,6 +36,8 @@ import org.wso2.carbon.identity.sso.cas.ticket.TicketGrantingTicket;
 import org.wso2.carbon.identity.sso.cas.util.CASSSOUtil;
 
 import javax.servlet.http.Cookie;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class SSOLoginProcessor extends IdentityProcessor {
     private static final String CAS_COOKIE_NAME = "CASTGC";
@@ -75,8 +77,18 @@ public class SSOLoginProcessor extends IdentityProcessor {
         CASMessageContext casMessageContext = (CASMessageContext) getContextIfAvailable(identityRequest);
         CASResponse.CASResponseBuilder builder = new CASLoginResponse.CASLoginResponseBuilder(casMessageContext);
         String serviceUrlFromRequest = casMessageContext.getServiceURL();
+        
+        // My attempt to change the serviceUrlFromRequest to match the the SP service url
+        URL url = null;
+        try {
+            url = new URL(serviceUrlFromRequest);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        String base = url.getProtocol() + "://" + url.getHost();
         AuthenticationResult authnResult = processResponseFromFrameworkLogin(casMessageContext, identityRequest);
-        String acsURL = CASSSOUtil.getAcsUrl(serviceUrlFromRequest, casMessageContext.getRequest().getTenantDomain());
+        String acsURL = CASSSOUtil.getAcsUrl(base, casMessageContext.getRequest().getTenantDomain());
+
         if (authnResult.isAuthenticated()) {
             String ticketGrantingTicketId = getTicketGrantingTicketId(identityRequest);
             if (ticketGrantingTicketId == null) {
